@@ -29,6 +29,7 @@ from tensorflow.python.framework import constant_op
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import random_seed
+from tensorflow.python.framework import test_util
 from tensorflow.python.grappler import cluster as gcluster
 from tensorflow.python.grappler import tf_optimizer
 from tensorflow.python.layers import convolutional as conv_layers
@@ -158,6 +159,7 @@ def _get_config(layout_optimizer=True):
         layout_optimizer=rewriter_config_pb2.RewriterConfig.OFF,
         # do not remove duplicated nodes
         arithmetic_optimization=rewriter_config_pb2.RewriterConfig.OFF)
+  rewrite_options.min_graph_nodes = -1
   graph_options = config_pb2.GraphOptions(
       rewrite_options=rewrite_options, build_cost_model=1)
   config = config_pb2.ConfigProto(graph_options=graph_options)
@@ -240,7 +242,7 @@ class LayoutOptimizerTest(test.TestCase):
       if restore:
         saver.restore(sess, checkpoint_path)
       else:
-        sess.run(variables.global_variables_initializer())
+        self.evaluate(variables.global_variables_initializer())
 
       np.random.seed(0)
       for _ in range(2):
@@ -261,7 +263,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = _two_layer_model(x)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -364,7 +366,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(pad)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -395,7 +397,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(reduce_sum)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -424,7 +426,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(cast)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -455,7 +457,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(squeeze)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -485,7 +487,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(squeeze)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -515,7 +517,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(squeeze)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -544,7 +546,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(reduce_sum)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -573,7 +575,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(reduce_sum)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -602,7 +604,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(reduce_sum)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -631,7 +633,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(reduce_sum)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -661,7 +663,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(reduce_sum)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -690,7 +692,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(reduce_sum)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -723,7 +725,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(concat)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -834,7 +836,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(reverse)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -904,7 +906,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(select)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -965,7 +967,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(select)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -1178,7 +1180,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(s)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -1213,7 +1215,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = array_ops.identity(s)
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -1339,14 +1341,14 @@ class LayoutOptimizerTest(test.TestCase):
       expected_num_transposes = 2
       self.assertEqual(expected_num_transposes, num_transposes)
       self._assert_trans_nhwc_to_nchw('Conv2D-0', nodes)
-      self.assertAllEqual(output_val_ref, output_val)
+      self.assertAllClose(output_val_ref, output_val, atol=1e-3)
 
   def testLoop(self):
     if test.is_gpu_available(cuda_only=True):
       output = _loop()
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -1373,7 +1375,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = _loop_with_branch()
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -1389,7 +1391,7 @@ class LayoutOptimizerTest(test.TestCase):
       expected_num_transposes = 3
       self.assertEqual(expected_num_transposes, num_transposes)
       self._assert_trans_nhwc_to_nchw('map/while/Conv2D-0', nodes)
-      self._assert_trans_nchw_to_nhwc('map/while/Add-0-2', nodes)
+      self._assert_trans_nchw_to_nhwc('map/while/Add_1-0-2', nodes)
       self.assertAllClose(output_val_ref, output_val, atol=1e-3)
 
   def testLoopWithVecAnd4D(self):
@@ -1397,7 +1399,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = _loop_with_vec_and_4d()
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -1413,7 +1415,7 @@ class LayoutOptimizerTest(test.TestCase):
       expected_num_transposes = 2
       self.assertEqual(expected_num_transposes, num_transposes)
       self._assert_trans_nhwc_to_nchw('map/while/Conv2D-0', nodes)
-      self._assert_trans_nchw_to_nhwc('map/while/Add-0-2', nodes)
+      self._assert_trans_nchw_to_nhwc('map/while/Add_1-0-2', nodes)
       self.assertAllClose(output_val_ref, output_val, atol=1e-3)
 
   def testBinaryOpSecondPort(self):
@@ -1421,7 +1423,7 @@ class LayoutOptimizerTest(test.TestCase):
       output = _model_with_second_port()
 
       with session.Session(config=_get_config(False)) as sess:
-        output_val_ref = sess.run(output)
+        output_val_ref = self.evaluate(output)
 
       with session.Session(config=_get_config()) as sess:
         metadata = config_pb2.RunMetadata()
@@ -1440,12 +1442,16 @@ class LayoutOptimizerTest(test.TestCase):
       self._assert_trans_nchw_to_nhwc('Add-0-0', nodes)
       self.assertAllClose(output_val_ref, output_val, atol=1e-3)
 
+  @test_util.run_deprecated_v1
   def testGradient(self):
     meta_graph = _simple_metagraph()
-    rewrite_options = rewriter_config_pb2.RewriterConfig(
-        layout_optimizer=rewriter_config_pb2.RewriterConfig.ON)
+    config = config_pb2.ConfigProto()
+    config.graph_options.rewrite_options.CopyFrom(
+        rewriter_config_pb2.RewriterConfig(
+            layout_optimizer=rewriter_config_pb2.RewriterConfig.ON,
+            min_graph_nodes=-1))
     optimized_graph = tf_optimizer.OptimizeGraph(
-        rewrite_options, meta_graph, cluster=_get_cluster())
+        config, meta_graph, cluster=_get_cluster())
 
     found = 0
     for node in optimized_graph.node:
@@ -1454,12 +1460,16 @@ class LayoutOptimizerTest(test.TestCase):
         self.assertEqual(node.attr['data_format'].s, b'NCHW')
     self.assertEqual(found, 5)
 
+  @test_util.run_deprecated_v1
   def testDepthwise(self):
     meta_graph = _simple_metagraph(depthwise=True)
-    rewrite_options = rewriter_config_pb2.RewriterConfig(
-        layout_optimizer=rewriter_config_pb2.RewriterConfig.ON)
+    config = config_pb2.ConfigProto()
+    config.graph_options.rewrite_options.CopyFrom(
+        rewriter_config_pb2.RewriterConfig(
+            layout_optimizer=rewriter_config_pb2.RewriterConfig.ON,
+            min_graph_nodes=-1))
     optimized_graph = tf_optimizer.OptimizeGraph(
-        rewrite_options, meta_graph, cluster=_get_cluster())
+        config, meta_graph, cluster=_get_cluster())
 
     found = 0
     for node in optimized_graph.node:

@@ -24,9 +24,12 @@ limitations under the License.
 #include "tensorflow/stream_executor/lib/env.h"
 #include "tensorflow/stream_executor/lib/initialize.h"
 #include "tensorflow/stream_executor/lib/status.h"
+#include "tensorflow/stream_executor/platform/dso_loader.h"
 #include "tensorflow/stream_executor/platform/logging.h"
 #include "tensorflow/stream_executor/rng.h"
+// clang-format off
 #include "cuda/include/curand.h"
+// clang-format on
 
 // Formats curandStatus_t to output prettified values into a log stream.
 std::ostream &operator<<(std::ostream &in, const curandStatus_t &status) {
@@ -61,6 +64,7 @@ PLUGIN_REGISTRY_DEFINE_PLUGIN_ID(kCuRandPlugin);
 
 namespace wrap {
 
+#ifdef PLATFORM_GOOGLE
 #define STREAM_EXECUTOR_CURAND_WRAP(__name)                         \
   struct WrapperShim__##__name {                                    \
     template <typename... Args>                                     \
@@ -69,6 +73,36 @@ namespace wrap {
       return ::__name(args...);                                     \
     }                                                               \
   } __name;
+
+#else
+#define STREAM_EXECUTOR_CURAND_WRAP(__name)                               \
+  struct DynLoadShim__##__name {                                          \
+    static const char *kName;                                             \
+    using FuncPtrT = std::add_pointer<decltype(::__name)>::type;          \
+    static void *GetDsoHandle() {                                         \
+      auto s = internal::CachedDsoLoader::GetCurandDsoHandle();           \
+      return s.ValueOrDie();                                              \
+    }                                                                     \
+    static FuncPtrT LoadOrDie() {                                         \
+      void *f;                                                            \
+      auto s = port::Env::Default()->GetSymbolFromLibrary(GetDsoHandle(), \
+                                                          kName, &f);     \
+      CHECK(s.ok()) << "could not find " << kName                         \
+                    << " in curand DSO; dlerror: " << s.error_message();  \
+      return reinterpret_cast<FuncPtrT>(f);                               \
+    }                                                                     \
+    static FuncPtrT DynLoad() {                                           \
+      static FuncPtrT f = LoadOrDie();                                    \
+      return f;                                                           \
+    }                                                                     \
+    template <typename... Args>                                           \
+    curandStatus_t operator()(CUDAExecutor *parent, Args... args) {       \
+      cuda::ScopedActivateExecutorContext sac{parent};                    \
+      return DynLoad()(args...);                                          \
+    }                                                                     \
+  } __name;                                                               \
+  const char *DynLoadShim__##__name::kName = #__name;
+#endif
 
 STREAM_EXECUTOR_CURAND_WRAP(curandCreateGenerator);
 STREAM_EXECUTOR_CURAND_WRAP(curandDestroyGenerator);
@@ -114,7 +148,7 @@ CUDARng::~CUDARng() {
 }
 
 bool CUDARng::Init() {
-  mutex_lock lock{mu_};
+  mutex_lock lock(mu_);
   CHECK(rng_ == nullptr);
 
   curandStatus_t ret =
@@ -150,7 +184,7 @@ constexpr bool ComplexIsConsecutiveFloats() {
 template <typename T>
 bool CUDARng::DoPopulateRandUniformInternal(Stream *stream,
                                             DeviceMemory<T> *v) {
-  mutex_lock lock{mu_};
+  mutex_lock lock(mu_);
   static_assert(ComplexIsConsecutiveFloats(),
                 "std::complex values are not stored as consecutive values");
 
@@ -209,7 +243,7 @@ bool CUDARng::DoPopulateRandGaussianInternal(Stream *stream, ElemT mean,
                                              ElemT stddev,
                                              DeviceMemory<ElemT> *v,
                                              FuncT func) {
-  mutex_lock lock{mu_};
+  mutex_lock lock(mu_);
 
   if (!SetStream(stream)) {
     return false;
@@ -241,7 +275,7 @@ bool CUDARng::DoPopulateRandGaussian(Stream *stream, double mean, double stddev,
 }
 
 bool CUDARng::SetSeed(Stream *stream, const uint8 *seed, uint64 seed_bytes) {
-  mutex_lock lock{mu_};
+  mutex_lock lock(mu_);
   CHECK(rng_ != nullptr);
 
   if (!CheckSeed(seed, seed_bytes)) {

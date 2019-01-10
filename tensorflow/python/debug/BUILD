@@ -5,7 +5,7 @@
 #
 # ":debug_py": Public Python methods and classes of tfdbg.
 #   For API documentation, see https://www.tensorflow.org/api_docs/python/tfdbg
-#   For a user interface walkthrough, see https://www.tensorflow.org/programmers_guide/debugger
+#   For a user interface walkthrough, see https://www.tensorflow.org/guide/debugger
 # ":grpc_debug_server": Server interface for grpc:// debug URLs.
 
 package(
@@ -18,6 +18,8 @@ exports_files(["LICENSE"])
 
 load("//tensorflow:tensorflow.bzl", "cuda_py_test")
 load("//tensorflow:tensorflow.bzl", "py_test")
+load("//tensorflow:tensorflow.bzl", "py_binary")
+load("//tensorflow:tensorflow.bzl", "if_not_v2")
 load("//tensorflow:tensorflow.bzl", "if_not_windows")
 
 py_library(
@@ -167,6 +169,7 @@ py_library(
     srcs_version = "PY2AND3",
     deps = [
         "//tensorflow/python:platform",
+        "//third_party/py/numpy",
         "@six_archive//:six",
     ],
 )
@@ -403,9 +406,11 @@ py_library(
     deps = [
         ":debug_errors",
         ":debug_fibonacci",
+        ":debug_keras",
+    ] + if_not_v2([
         ":debug_mnist",
         ":debug_tflearn_iris",
-    ],
+    ]),
 )
 
 py_binary(
@@ -450,6 +455,17 @@ py_binary(
         ":debug_py",
         "//tensorflow:tensorflow_py",
         "@six_archive//:six",
+    ],
+)
+
+py_binary(
+    name = "debug_keras",
+    srcs = ["examples/debug_keras.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":debug_py",
+        "//tensorflow:tensorflow_py",
+        "//third_party/py/numpy",
     ],
 )
 
@@ -543,6 +559,7 @@ py_test(
         ":source_utils",
         "//tensorflow/core:protos_all_py",
         "//tensorflow/python:client",
+        "//tensorflow/python:cond_v2",
         "//tensorflow/python:constant_op",
         "//tensorflow/python:control_flow_ops",
         "//tensorflow/python:framework_ops",
@@ -552,6 +569,7 @@ py_test(
         "//tensorflow/python:resource_variable_ops",
         "//tensorflow/python:util",
         "//tensorflow/python:variables",
+        "//tensorflow/python:while_v2",
         "//third_party/py/numpy",
     ],
 )
@@ -563,7 +581,6 @@ py_test(
     srcs_version = "PY2AND3",
     tags = [
         "no_windows",
-        "nomac",
         "oss_serial",
     ],
     deps = [
@@ -572,6 +589,7 @@ py_test(
         ":source_utils",
         "//tensorflow/core:protos_all_py",
         "//tensorflow/python:client",
+        "//tensorflow/python:client_testlib",
         "//tensorflow/python:framework_ops",
         "//tensorflow/python:framework_test_lib",
         "//tensorflow/python:math_ops",
@@ -601,7 +619,7 @@ cuda_py_test(
 
 py_test(
     name = "framework_test",
-    size = "small",
+    size = "medium",
     srcs = ["wrappers/framework_test.py"],
     srcs_version = "PY2AND3",
     deps = [
@@ -789,6 +807,7 @@ cuda_py_test(
         "//tensorflow/python:platform_test",
         "//tensorflow/python:variables",
     ],
+    tags = ["no_windows_gpu"],
 )
 
 py_test(
@@ -801,6 +820,7 @@ py_test(
         "//tensorflow/python:framework_test_lib",
         "//tensorflow/python:platform",
         "//tensorflow/python:platform_test",
+        "//third_party/py/numpy",
     ],
 )
 
@@ -920,7 +940,6 @@ py_test(
     size = "small",
     srcs = ["cli/profile_analyzer_cli_test.py"],
     srcs_version = "PY2AND3",
-    tags = ["no_windows"],
     deps = [
         ":debugger_cli_common",
         ":profile_analyzer_cli",
@@ -1003,6 +1022,7 @@ cuda_py_test(
         "no_oss",  # Test flaky due to port collisions.
         "no_windows",
         "noasan",  # Times out due to size of test (b/73731462).
+        "optonly",  # Test flaky (b/80130873)
         "oss_serial",
     ],
 )
@@ -1031,7 +1051,6 @@ cuda_py_test(
     tags = [
         "no_oss",  # Incompatible with bazel_pip.
         "no_windows",
-        "nomac",  # TODO(cais): Install of futures and grpcio on all macs.
         "notsan",
     ],
 )
@@ -1082,6 +1101,24 @@ py_test(
         "//tensorflow/python:state_ops",
         "//tensorflow/python:training",
         "//tensorflow/python:variables",
+        "//third_party/py/numpy",
+    ],
+)
+
+py_test(
+    name = "disk_usage_test",
+    size = "small",
+    srcs = ["wrappers/disk_usage_test.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":dumping_wrapper",
+        ":hooks",
+        "//tensorflow/python:client",
+        "//tensorflow/python:errors",
+        "//tensorflow/python:framework_test_lib",
+        "//tensorflow/python:platform_test",
+        "//tensorflow/python:training",
+        "//tensorflow/python:variables",
     ],
 )
 
@@ -1092,8 +1129,12 @@ sh_test(
     data = [
         ":debug_errors",
         ":debug_fibonacci",
+        ":debug_keras",
         ":debug_mnist",
         ":debug_tflearn_iris",
         ":offline_analyzer",
+    ],
+    tags = [
+        "no_windows",
     ],
 )
